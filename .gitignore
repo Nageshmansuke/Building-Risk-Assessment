@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment & Secret files (NEVER commit secrets to git)
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases & temporary logs
+*.db
+*.sqlite
+seismos.db
+*.log
+
+# Caches
+.cache/
+.pytest_cache/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE configurations
+.vscode/
+.idea/
+
+# Note: decision_tree.pkl and logistic_regression.pkl are lightweight (<10KB) models
+# required for deployment and MUST be tracked in git.

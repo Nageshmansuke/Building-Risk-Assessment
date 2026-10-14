@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: seismos_web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=production-secret-key-change-this
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=seismos_db_password
+      - MYSQL_DATABASE=seismos
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    container_name: seismos_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: seismos_db_password
+      MYSQL_DATABASE: seismos
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pseismos_db_password"]
+      timeout: 5s
+      retries: 10
+      interval: 10s
+
+volumes:
+  mysql_data:

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% set active_page = "about" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+
+<div class="about-page">
+
+  <div class="about-hero">
+    <div class="page-eyebrow page-in">About SEISMOS</div>
+    <h1 class="page-in-2">
+      HOW THE<br>
+      <em>MODEL</em><br>
+      WORKS
+    </h1>
+    <p class="page-in-3">
+      SEISMOS uses a supervised machine learning model trained on historical
+      seismic event data to estimate structural damage levels based on five
+      key input parameters.
+    </p>
+  </div>
+
+  <!-- Info cards -->
+  <div class="about-grid page-in-3">
+    <div class="about-card">
+      <h3><span>🎯</span> Purpose</h3>
+      <p>
+        Rapid post-event damage estimation to support emergency response
+        planning, infrastructure triage, and risk communication for buildings
+        in seismically active regions.
+      </p>
+    </div>
+    <div class="about-card">
+      <h3><span>🤖</span> ML Model</h3>
+      <p>
+        The predictor is built with scikit-learn and trained on labelled
+        seismic datasets. The model maps input features to one of four
+        damage classification categories.
+      </p>
+    </div>
+    <div class="about-card">
+      <h3><span>⚡</span> Real-Time</h3>
+      <p>
+        Predictions are served via a lightweight Flask API, returning
+        results in under one second — suitable for embedding in
+        emergency response workflows.
+      </p>
+    </div>
+    <div class="about-card">
+      <h3><span>📊</span> Accuracy</h3>
+      <p>
+        The model is evaluated on held-out test data. Accuracy depends on
+        the quality of training labels — always validate outputs against
+        on-site structural assessment.
+      </p>
+    </div>
+  </div>
+
+<div class="about-section">
+  <h2>Input Parameters</h2>
+  <table class="parameter-table">
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th>Description</th>
+        <th>Unit</th>
+        <th>Typical Range / Values</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>superstructure_type</td>
+        <td>Primary structural system of the building</td>
+        <td>Category</td>
+        <td>RC, Brick, Timber, Mud-Mortar</td>
+      </tr>
+      <tr>
+        <td>foundation_type</td>
+        <td>Base construction supporting the structure</td>
+        <td>Category</td>
+        <td>Mud-Mortar,RC,Cement,Bamboo/Timber</td>
+      </tr>
+      <tr>
+        <td>building_age</td>
+        <td>Years since original construction</td>
+        <td>Years</td>
+        <td>0 – 200</td>
+      </tr>
+      <tr>
+        <td>plinth_area</td>
+        <td>Total floor area at the ground level</td>
+        <td>Sq. Ft / m²</td>
+        <td>70 – 2000</td>
+      </tr>
+      <tr>
+        <td>other_material</td>
+        <td>Secondary materials used in the build</td>
+        <td>Category</td>
+        <td>Timber/Bamboo,Timber/Plank,RCC/RB/RBC</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+  <!-- Damage levels -->
+  <div class="about-section page-in-4">
+    <h2>Damage Classifications</h2>
+    <table class="parameter-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Description</th>
+          <th>Typical Indicators</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="damage-badge badge-low">Low</span></td>
+          <td>Minor or no structural damage</td>
+          <td>Hairline cracks, fallen plaster, no structural compromise</td>
+        </tr>
+        <tr>
+          <td><span class="damage-badge badge-medium">Medium</span></td>
+          <td>Moderate structural damage</td>
+          <td>Visible cracks in walls, partial collapse of non-structural elements</td>
+        </tr>
+        <tr>
+          <td><span class="damage-badge badge-high">High</span></td>
+          <td>Severe structural damage</td>
+          <td>Major cracks, partial collapse, building uninhabitable</td>
+        </tr>
+        <tr>
+          <td><span class="damage-badge badge-severe">Severe</span></td>
+          <td>Total or near-total collapse</td>
+          <td>Complete failure of load-bearing elements, total loss</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tech stack -->
+  <div class="about-section page-in-4">
+    <h2>Technology Stack</h2>
+    <p>This application is built with the following open-source technologies:</p>
+    <div class="tech-stack">
+      <span class="tech-tag">Python 3.x</span>
+      <span class="tech-tag">Flask</span>
+      <span class="tech-tag">scikit-learn</span>
+      <span class="tech-tag">pandas</span>
+      <span class="tech-tag">NumPy</span>
+      <span class="tech-tag">Jinja2</span>
+      <span class="tech-tag">HTML5 / CSS3</span>
+      <span class="tech-tag">Vanilla JS</span>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

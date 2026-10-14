@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% set active_page = "home" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag page-in">
+      <span class="hero-tag-dot"></span>
+      AI-Powered Risk Analysis
+    </div>
+
+    <h1 class="page-in-2">
+      PREDICT
+      <em>EARTHQUAKE</em>
+      DAMAGE
+    </h1>
+
+    <p class="hero-desc page-in-3">
+      Enter Building's structural parameters — Superstructure, Foundation Type, and building age —
+      to instantly estimate structural damage levels using our trained machine
+      learning model.
+    </p>
+
+    <div class="hero-actions page-in-4">
+      <a href="{{ url_for('predict') }}" class="btn-primary">
+        ⚡ Start Prediction
+      </a>
+      <a href="{{ url_for('about') }}" class="btn-secondary">
+        Learn More →
+      </a>
+    </div>
+
+    <div class="hero-stats page-in-4">
+      <div class="stat-item">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Input Params</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">&lt;1s</div>
+        <div class="stat-label">Prediction Time</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seismic rings visual -->
+  <div class="hero-visual">
+    <svg viewBox="0 0 540 540" xmlns="http://www.w3.org/2000/svg">
+      <circle class="ring" cx="270" cy="270" r="230"/>
+      <circle class="ring" cx="270" cy="270" r="230"/>
+      <circle class="ring" cx="270" cy="270" r="230"/>
+      <circle fill="rgba(200,117,42,0.6)" cx="270" cy="270" r="8"/>
+      <circle fill="none" stroke="rgba(200,117,42,0.15)" stroke-width="1" cx="270" cy="270" r="100"/>
+      <circle fill="none" stroke="rgba(200,117,42,0.1)"  stroke-width="1" cx="270" cy="270" r="170"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══ FEATURE CARDS ═══ -->
+<section class="features">
+  <div class="feat-card">
+    <span class="feat-icon">🏛️</span>
+    <h3>Superstructure Type</h3>
+    <p>The primary load-bearing system, such as masonry or RC frame, which determines structural ductility during seismic events.</p>
+  </div>
+
+  <div class="feat-card">
+    <span class="feat-icon">⚓</span>
+    <h3>Foundation Type</h3>
+    <p>Categorizes the building base (e.g., mud-mortar, cement, or raft) to assess stability against ground displacement.</p>
+  </div>
+
+  <div class="feat-card">
+    <span class="feat-icon">⏳</span>
+    <h3>Building Age</h3>
+    <p>A critical metric for material degradation and determining which historical seismic building codes were applied.</p>
+  </div>
+
+  <div class="feat-card">
+    <span class="feat-icon">📏</span>
+    <h3>Plinth Area</h3>
+    <p>The total square footage of the ground floor, influencing the building's center of mass and inertial force response.</p>
+  </div>
+
+  <div class="feat-card">
+    <span class="feat-icon">🧱</span>
+    <h3>Other Material Type</h3>
+    <p>Secondary materials used in construction that contribute to the overall stiffness and non-structural damage risk.</p>
+  </div>
+</section>
+
+{% endblock %}

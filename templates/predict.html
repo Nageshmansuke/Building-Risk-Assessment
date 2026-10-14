@@ -1,0 +1,1259 @@
+{% extends "base.html" %} 
+{% set active_page = "predict" %} 
+{% block title %}Predict{% endblock %} 
+
+{% block content %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #222733;
+    --accent: #ec3f18;
+    --text: #e8eaf0;
+
+    --muted: #6b7280;
+    --low: #22c55e;
+    --medium: #f52e0b;
+    --high: #ef4444;
+    --critical: #dc2626;
+    --dt: #818cf8;
+    --lr: #34d399;
+  }
+
+  /* PREDICT PAGE STYLES */
+  .predict-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tag::before {
+    content: "";
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(26px, 4vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    height: fit-content;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--low);
+    animation: pulse 2s infinite;
+  }
+
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  /* MODEL SELECTOR */
+  .model-selector {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .model-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .model-toggle {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .model-btn {
+    padding: 9px 20px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    font-family: "Syne", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.22s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-dt {
+    background: var(--dt);
+  }
+  .dot-lr {
+    background: var(--lr);
+  }
+
+  .model-btn.active-dt {
+    background: rgba(129, 140, 248, 0.15);
+    color: var(--dt);
+    box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.3);
+  }
+  .model-btn.active-lr {
+    background: rgba(52, 211, 153, 0.12);
+    color: var(--lr);
+    box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.3);
+  }
+
+  .model-desc {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 22px;
+    align-items: start;
+  }
+
+  @media (max-width: 920px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* CARD */
+  .card,
+  .result-card,
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px;
+  }
+
+  .result-card,
+  .chart-card {
+    transition: border-color 0.4s;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .input-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .field-hint {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .field-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 6px;
+    min-width: 72px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 3px rgba(240, 192, 64, 0.2);
+    transition: box-shadow 0.2s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 6px rgba(240, 192, 64, 0.25);
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .select-wrapper::after {
+    content: "▾";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  select {
+    width: 100%;
+    padding: 10px 36px 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: "Syne", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus {
+    border-color: var(--accent);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  /* BUTTON */
+  .predict-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--accent);
+    color: #0a0c10;
+    border: none;
+    border-radius: 12px;
+    font-family: "Syne", sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 4px;
+    position: relative;
+    overflow: hidden;
+    transition:
+      transform 0.15s,
+      box-shadow 0.15s;
+  }
+
+  .predict-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(240, 192, 64, 0.28);
+  }
+  .predict-btn:active {
+    transform: translateY(0);
+  }
+  .predict-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .predict-btn.loading .btn-text {
+    opacity: 0;
+  }
+
+.spinner {
+  width: 16px;  /* Use an even number */
+  height: 16px; /* Use an even number */
+  border: 2px solid rgba(255, 87, 34, 0.2);
+  border-top: 2px solid #ff5722;
+  border-radius: 50%;
+  
+  /* This prevents the size from changing based on border width */
+  box-sizing: border-box; 
+  
+  /* Fixes the "jumping" relative to text */
+  vertical-align: middle; 
+  display: inline-block;
+  
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  transform-origin: center; /* Forces rotation around the exact middle */
+}
+
+  .predict-btn.loading .spinner {
+    display: block;
+  }
+  @keyframes spin {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  /* RIGHT COLUMN */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* RESULT */
+  .result-idle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 26px 0;
+    gap: 12px;
+    color: var(--muted);
+  }
+
+  .idle-icon {
+    width: 50px;
+    height: 50px;
+    border: 2px dashed var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .result-idle p {
+    font-size: 12px;
+    text-align: center;
+    max-width: 190px;
+    line-height: 1.5;
+  }
+
+  .result-active {
+    display: none;
+  }
+
+  .risk-display {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .risk-badge {
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 19px;
+    font-weight: 800;
+    border: 2px solid currentColor;
+    transition: all 0.4s;
+    white-space: nowrap;
+  }
+
+  .risk-badge.low {
+    color: var(--low);
+    background: rgba(34, 197, 94, 0.1);
+  }
+  .risk-badge.medium {
+    color: var(--medium);
+    background: rgba(245, 158, 11, 0.1);
+  }
+  .risk-badge.high {
+    color: var(--high);
+    background: rgba(239, 68, 68, 0.1);
+  }
+  .risk-badge.critical {
+    color: var(--critical);
+    background: rgba(220, 38, 38, 0.12);
+  }
+
+  .risk-meta {
+    flex: 1;
+  }
+
+  .risk-score-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .risk-score-value {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 26px;
+    font-weight: 500;
+  }
+
+  .risk-score-value span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .model-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid;
+    margin-top: 14px;
+  }
+
+  .model-tag.dt {
+    color: var(--dt);
+    border-color: rgba(129, 140, 248, 0.4);
+    background: rgba(129, 140, 248, 0.07);
+  }
+  .model-tag.lr {
+    color: var(--lr);
+    border-color: rgba(52, 211, 153, 0.35);
+    background: rgba(52, 211, 153, 0.07);
+  }
+
+  .confidence-section {
+    margin-top: 16px;
+  }
+
+  .conf-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: "IBM Plex Mono", monospace;
+    margin-bottom: 7px;
+  }
+
+  .conf-bar-bg {
+    height: 5px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .conf-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .factors {
+    margin-top: 16px;
+  }
+
+  .factor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+
+  .factor-name {
+    font-size: 10px;
+    color: var(--muted);
+    width: 100px;
+    flex-shrink: 0;
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  .factor-bar-bg {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .factor-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .factor-pct {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--text);
+    width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* CHART */
+  .chart-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    padding: 6px 13px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: "Syne", sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #0a0c10;
+    border-color: var(--accent);
+  }
+
+  .chart-container {
+    position: relative;
+    height: 210px;
+  }
+
+  .chart-pane {
+    display: none;
+    height: 100%;
+  }
+  .chart-pane.active {
+    display: block;
+  }
+
+  /* API INFO */
+  .api-info {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .api-info-title {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .api-info code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: #a8b4cc;
+    display: block;
+    line-height: 1.75;
+  }
+
+  .api-info code .k {
+    color: #e05a30;
+  }
+  .api-info code .v {
+    color: var(--accent);
+  }
+  .api-info code .c {
+    color: var(--muted);
+  }
+
+  /* Make the rendered AI Markdown look beautiful */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+    color: #f3f4f6;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #374151;
+    padding-bottom: 5px;
+}
+.markdown-body strong {
+    color: #60a5fa; /* Makes bold text stand out in a nice blue */
+}
+.markdown-body ul, .markdown-body ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+.markdown-body li {
+    margin-bottom: 5px;
+}
+</style>
+
+<div class="predict-container">
+  <header>
+    <div>
+      <div class="tag">Earthquake Damage Assessment</div>
+      <h1>Building <span>Risk</span><br />Predictor</h1>
+    </div>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Model Ready
+    </div>
+  </header>
+
+  <div class="model-selector">
+    <span class="model-label">Select Model</span>
+    <div class="model-toggle">
+      <button
+        class="model-btn active-dt"
+        id="btn-dt"
+        onclick="selectModel('dt')"
+      >
+        <span class="dot dot-dt"></span> Decision Tree
+      </button>
+      <button class="model-btn" id="btn-lr" onclick="selectModel('lr')">
+        <span class="dot dot-lr"></span> Logistic Regression
+      </button>
+    </div>
+    <div class="model-desc" id="modelDesc">
+      <span style="color: var(--dt)">Decision Tree</span> — rule-based splits ·
+      interpretable feature paths
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">Building Parameters</div>
+      <div class="input-sections">
+        <div class="field">
+          <div class="field-header">
+            <div>
+              <div class="field-label">Building Age</div>
+              <div class="field-hint">age_building · 0 – 200</div>
+            </div>
+            <span class="field-value" id="val-age">25 yrs</span>
+          </div>
+          <input
+            type="range"
+            id="age_building"
+            min="0"
+            max="200"
+            step="1"
+            value="25"
+            oninput="
+              document.getElementById('val-age').textContent =
+                this.value + ' yrs';
+              updateChart();
+            "
+          />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <div>
+              <div class="field-label">Plinth Area</div>
+              <div class="field-hint">plinth_area_sq_ft · 70 – 2000</div>
+            </div>
+            <span class="field-value" id="val-area">600 ft²</span>
+          </div>
+          <input
+            type="range"
+            id="plinth_area_sq_ft"
+            min="70"
+            max="2000"
+            step="10"
+            value="600"
+            oninput="
+              document.getElementById('val-area').textContent =
+                (+this.value).toLocaleString() + ' ft²';
+              updateChart();
+            "
+          />
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <div class="field-label">Superstructure Type</div>
+          <div class="field-hint" style="margin-bottom: 6px">
+            has_superstructure_*
+          </div>
+          <div class="select-wrapper">
+            <select id="superstructure" onchange="updateChart()">
+              <option value="Stone, mud mortar">Stone, mud mortar</option>
+              <option value="Brick, cement mortar">Brick, cement mortar</option>
+              <option value="Adobe/mud">Adobe / mud</option>
+              <option value="Stone, cement mortar">Stone, cement mortar</option>
+              <option value="RC, non-engineered">RC, non-engineered</option>
+              <option value="Timber">Timber</option>
+              <option value="Brick, mud mortar">Brick, mud mortar</option>
+              <option value="Bamboo">Bamboo</option>
+              <option value="Stone">Stone</option>
+              <option value="RC, engineered" selected>RC, engineered</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Foundation Type</div>
+          <div class="field-hint" style="margin-bottom: 6px">
+            foundation_type
+          </div>
+          <div class="select-wrapper">
+            <select id="foundation_type" onchange="updateChart()">
+              <option value="Mud mortar-Stone/Brick" selected>
+                Mud mortar — Stone / Brick
+              </option>
+              <option value="RC">RC</option>
+              <option value="Cement-Stone/Brick">Cement — Stone / Brick</option>
+              <option value="Bamboo/Timber">Bamboo / Timber</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Other Floor Type</div>
+          <div class="field-hint" style="margin-bottom: 6px">
+            other_floor_type
+          </div>
+          <div class="select-wrapper">
+            <select id="other_floor_type" onchange="updateChart()">
+              <option value="TImber/Bamboo-Mud" selected>
+                Timber / Bamboo — Mud
+              </option>
+              <option value="Not applicable">Not applicable</option>
+              <option value="Timber-Planck">Timber — Planck</option>
+              <option value="RCC/RB/RBC">RCC / RB / RBC</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="predict-btn" id="predictBtn" onclick="runPrediction()">
+          <span class="btn-text">Run Prediction</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="result-card" id="resultCard">
+        <div class="card-title">Prediction Result</div>
+
+        <div class="result-idle" id="resultIdle">
+          <div class="idle-icon">⬡</div>
+          <p>Configure parameters and run prediction to see results</p>
+        </div>
+
+        <div class="result-active" id="resultActive" style="display: none;">
+          <div class="risk-display">
+            <div class="risk-badge" id="riskBadge">—</div>
+            <div class="risk-meta">
+              <div class="risk-score-label">Damage Grade</div>
+              <div class="risk-score-value" id="riskScore">
+                —<span> / 5</span>
+              </div>
+            </div>
+          </div>
+          <div class="model-tag" id="modelTag">—</div>
+
+          <div class="confidence-section">
+            <div class="conf-header">
+              <span>Model Confidence</span>
+              <span id="confPct">—</span>
+            </div>
+            <div class="conf-bar-bg">
+              <div class="conf-bar-fill" id="confBar"></div>
+            </div>
+          </div>
+
+          <div class="factors" id="factorBars"></div>
+         
+         
+          <div id="ai-section" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #222733; display: none;">
+  <div class="card-title" style="font-size: 0.9em; color: #a0aec0; margin-bottom: 10px;">Expert Consultant</div>
+  
+  <button id="askAiBtn" onclick="fetchAiReport()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #f6a53b 0%, #524814 100%); color: white; border: ; border-radius: 6px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: bold; transition: opacity 0.2s;">
+    🤖 Generate AI Retrofitting Report
+  </button>
+  
+  <div id="loadingText" style="display: none; color: #f0fa60; font-size: 0.85em; text-align: center; margin-top: 10px;">
+    <div class="spinner" style="display: inline-block; border-color: #daedaa; border-right-color: transparent; margin-right: 5px;"></div>
+    Drafting report based on building codes (15-30s)...
+  </div>
+
+ <div id="reportContainer" class="markdown-body" style="display: none; margin-top: 15px; padding: 20px; background-color: #1e222d; border-radius: 8px; color: #d1d5db; font-size: 0.9rem; line-height: 1.7; border: 1px solid #374151; max-height: 500px; overflow-y: auto; text-align: left;"></div>
+</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="card-title">Visual Analysis</div>
+        <div class="chart-tabs">
+          <button class="tab-btn active" onclick="switchTab('radar', this)">
+            Risk Factors
+          </button>
+          <button class="tab-btn" onclick="switchTab('bar', this)">
+            Foundation What-If
+          </button>
+        </div>
+        <div class="chart-container">
+          <div class="chart-pane active" id="pane-radar">
+            <canvas id="radarChart"></canvas>
+          </div>
+          <div class="chart-pane" id="pane-bar">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="api-info">
+        <div class="api-info-title">Flask — POST /predict</div>
+        <code>
+          <span class="c">// Payload sent to your Flask route:</span><br />
+          {<br />
+          &nbsp;&nbsp;<span class="k">"model"</span>:
+          <span class="v">"decision_tree"</span>,
+          <span class="c">// or "logistic_regression"</span><br />
+          &nbsp;&nbsp;<span class="k">"age_building"</span>:
+          <span class="v">25</span>,<br />
+          &nbsp;&nbsp;<span class="k">"plinth_area_sq_ft"</span>:
+          <span class="v">600</span>,<br />
+          &nbsp;&nbsp;<span class="k">"superstructure"</span>:
+          <span class="v">"rc_engineered"</span>,<br />
+          &nbsp;&nbsp;<span class="k">"foundation_type"</span>:
+          <span class="v">"rc"</span>,<br />
+          &nbsp;&nbsp;<span class="k">"other_floor_type"</span>:
+          <span class="v">"rcc_rb_rbc"</span><br />
+          }<br /><br />
+          <span class="c">// Expected response:</span><br />
+          { <span class="k">"risk_level"</span>: <span class="v">"Low"</span>,
+          <span class="k">"damage_grade"</span>: <span class="v">1</span>,<br />
+          &nbsp;&nbsp;<span class="k">"confidence"</span>:
+          <span class="v">0.88</span>, <span class="k">"factors"</span>: {
+          <span class="c">...</span> } }
+        </code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  /* ── State ── */
+  let activeModel = "dt";
+
+  function selectModel(m) {
+    activeModel = m;
+    document.getElementById("btn-dt").className =
+      "model-btn" + (m === "dt" ? " active-dt" : "");
+    document.getElementById("btn-lr").className =
+      "model-btn" + (m === "lr" ? " active-lr" : "");
+    const desc = document.getElementById("modelDesc");
+    if (m === "dt") {
+      desc.innerHTML =
+        '<span style="color:var(--dt)">Decision Tree</span> — rule-based splits · interpretable feature paths';
+    } else {
+      desc.innerHTML =
+        '<span style="color:var(--lr)">Logistic Regression</span> — probability outputs · well-calibrated confidence';
+    }
+  }
+
+  /* ── Charts ── */
+  Chart.defaults.color = "#6b7280";
+  Chart.defaults.font = { family: "IBM Plex Mono", size: 11 };
+
+  const radarChart = new Chart(
+    document.getElementById("radarChart").getContext("2d"),
+    {
+      type: "radar",
+      data: {
+        labels: [
+          "Age",
+          "Foundation",
+          "Plinth Area",
+          "Superstructure",
+          "Floor Type",
+        ],
+        datasets: [
+          {
+            data: [30, 75, 35, 20, 50],
+            backgroundColor: "rgba(240,192,64,0.1)",
+            borderColor: "#f0c040",
+            borderWidth: 2,
+            pointBackgroundColor: "#f0c040",
+            pointRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            grid: { color: "#222733" },
+            angleLines: { color: "#222733" },
+            ticks: { display: false },
+            pointLabels: {
+              color: "#a0aec0",
+              font: { size: 11, family: "IBM Plex Mono" },
+            },
+          },
+        },
+        plugins: { legend: { display: false } },
+      },
+    }
+  );
+
+  const barChart = new Chart(
+    document.getElementById("barChart").getContext("2d"),
+    {
+      type: "bar",
+      data: {
+        labels: ["Mud Mortar", "Bamboo/Timber", "Cement Stone", "RC"],
+        datasets: [
+          {
+            data: [88, 65, 42, 15],
+            backgroundColor: [
+              "rgba(239,68,68,0.7)",
+              "rgba(245,158,11,0.65)",
+              "rgba(34,197,94,0.5)",
+              "rgba(34,197,94,0.75)",
+            ],
+            borderColor: ["#ef4444", "#f59e0b", "#22c55e", "#22c55e"],
+            borderWidth: 2,
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { grid: { color: "#222733" }, ticks: { color: "#6b7280" } },
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: "#222733" },
+            ticks: { color: "#6b7280", stepSize: 25 },
+          },
+        },
+        plugins: { legend: { display: false } },
+      },
+    }
+  );
+
+  function switchTab(name, btn) {
+    document
+      .querySelectorAll(".chart-pane")
+      .forEach((p) => p.classList.remove("active"));
+    document
+      .querySelectorAll(".tab-btn")
+      .forEach((b) => b.classList.remove("active"));
+    document.getElementById("pane-" + name).classList.add("active");
+    btn.classList.add("active");
+    radarChart.resize();
+    barChart.resize();
+  }
+
+  function updateChart() {
+    const age = +document.getElementById("age_building").value;
+    const area = +document.getElementById("plinth_area_sq_ft").value;
+    const sup = document.getElementById("superstructure").value;
+    const fnd = document.getElementById("foundation_type").value;
+    const flr = document.getElementById("other_floor_type").value;
+
+    radarChart.data.datasets[0].data = [
+      Math.round((age / 200) * 100),
+      FOUND_RISK[fnd] ?? 50,
+      Math.round(Math.max(8, 100 - ((area - 70) / 1930) * 80)),
+      SUP_RISK[sup] ?? 50,
+      FLOOR_RISK[flr] ?? 50,
+    ];
+    radarChart.update("none");
+  }
+
+  updateChart();
+
+  /* ── Real Prediction ONLY ── */
+  async function runPrediction() {
+    const btn = document.getElementById("predictBtn");
+    btn.classList.add("loading");
+
+    const payload = {
+      model: activeModel === "dt" ? "decision_tree" : "logistic_regression",
+      age_building: +document.getElementById("age_building").value,
+      plinth_area_sq_ft: +document.getElementById("plinth_area_sq_ft").value,
+      superstructure: document.getElementById("superstructure").value,
+      foundation_type: document.getElementById("foundation_type").value,
+      other_floor_type: document.getElementById("other_floor_type").value,
+    };
+
+    try {
+      /* ── Point this at your Flask route ── */
+      const res = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Backend Error (HTTP " + res.status + ")");
+      }
+      
+      const data = await res.json();
+      showResult(data, activeModel);
+
+      // --- NEW: Prepare AI Data ---
+      window.latestPayload = payload; // Save inputs globally
+      window.latestResult = data;     // Save ML math globally
+      
+      // Reset the AI UI
+      document.getElementById("ai-section").style.display = "block";
+      document.getElementById("askAiBtn").style.display = "block";
+      document.getElementById("reportContainer").style.display = "none";
+      document.getElementById("reportContainer").innerText = "";
+      // ----------------------------
+
+    } catch (err) {
+      console.error("Strict Prediction Mode Error:", err.message);
+      
+      // Update UI to explicitly show the error state!
+      document.getElementById("resultActive").style.display = "none";
+      const idleDiv = document.getElementById("resultIdle");
+      idleDiv.style.display = "block";
+      idleDiv.innerHTML = `
+        <div class="idle-icon" style="color: #ef4444; font-size: 2rem;">⚠️</div>
+        <p style="color: #ef4444; font-weight: bold; margin-bottom: 5px;">Prediction Failed</p>
+        <p style="color: #6b7280; font-size: 0.9em;">Could not reach the model. Please check your Flask server.</p>
+        <p style="color: #ef4444; font-size: 0.85em; margin-top: 10px;">[ ${err.message} ]</p>
+      `;
+      document.getElementById("resultCard").style.borderColor = "#ef4444";
+
+    } finally {
+      btn.classList.remove("loading");
+    }
+  }
+
+  function showResult(data, model) {
+    document.getElementById("resultIdle").style.display = "none";
+    document.getElementById("resultActive").style.display = "block";
+
+
+    const level = (data.risk_level || "unknown").toLowerCase();
+    const badge = document.getElementById("riskBadge");
+    badge.textContent = data.risk_level || "?";
+    badge.className = "risk-badge " + level;
+
+    document.getElementById("riskScore").innerHTML =
+      `${data.damage_grade ?? "—"}<span> / 5</span>`;
+
+    const tag = document.getElementById("modelTag");
+    const isLR = model === "lr" || data.model_used === "logistic_regression";
+    tag.textContent = isLR ? "◈ Logistic Regression" : "◈ Decision Tree";
+    tag.className = "model-tag " + (isLR ? "lr" : "dt");
+
+    const conf = Math.round((data.confidence || 0) * 100);
+    document.getElementById("confPct").textContent = conf + "%";
+    setTimeout(() => {
+      document.getElementById("confBar").style.width = conf + "%";
+    }, 50);
+
+    const factors = data.factors || {};
+    const colorMap = {
+      foundation: "#e05a30",
+      superstructure: "#f59e0b",
+      age: "#a78bfa",
+      floor_type: "#60a5fa",
+      plinth_area: "#34d399",
+    };
+    const container = document.getElementById("factorBars");
+    container.innerHTML = "";
+    Object.entries(factors).forEach(([k, v]) => {
+      const pct = Math.round(v * 100);
+      const color = colorMap[k] || "#6b7280";
+      container.innerHTML += `
+      <div class="factor-row">
+        <span class="factor-name">${k.replace(/_/g, " ")}</span>
+        <div class="factor-bar-bg">
+          <div class="factor-bar-fill" id="fb-${k}" style="background:${color}"></div>
+        </div>
+        <span class="factor-pct">${pct}%</span>
+      </div>`;
+    });
+    setTimeout(() => {
+      Object.entries(factors).forEach(([k, v]) => {
+        const el = document.getElementById("fb-" + k);
+        if (el) el.style.width = Math.round(v * 100) + "%";
+      });
+    }, 80);
+
+    const glowMap = {
+      low: "#22c55e",
+      medium: "#f59e0b",
+      high: "#ef4444",
+      critical: "#dc2626",
+    };
+    document.getElementById("resultCard").style.borderColor =
+      glowMap[level] || "#222733";
+  }
+
+  /* ── AI Consultant Logic ── */
+  async function fetchAiReport() {
+    const btn = document.getElementById("askAiBtn");
+    const loading = document.getElementById("loadingText");
+    const container = document.getElementById("reportContainer");
+
+    // UI Updates
+    btn.style.display = "none";
+    loading.style.display = "block";
+
+    // Package the data saved from the last ML run
+    const aiPayload = {
+      building_inputs: window.latestPayload,
+      damage_grade: window.latestResult.damage_grade,
+      risk_level: window.latestResult.risk_level
+    };
+
+    try {
+      const res = await fetch("/api/get_consultant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiPayload),
+      });
+
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+
+      loading.style.display = "none";
+      container.style.display = "block";
+      
+      if (data.expert_report) {
+        // marked.parse() converts **text** into <strong>text</strong> instantly!
+        container.innerHTML = marked.parse(data.expert_report);
+      } else {
+        container.innerText = "❌ Error: Could not generate report.";
+      }
+    } catch (err) {
+      console.error(err);
+      loading.style.display = "none";
+      container.style.display = "block";
+      container.innerText = "❌ Connection failed. Please check backend.";
+    }
+  }
+
+</script>
+{% endblock %}

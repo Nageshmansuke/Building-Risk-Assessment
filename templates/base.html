@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SEISMOS{% endblock %} — Structural Risk Assessment Platform</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- ═══ NAVBAR ═══ -->
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}" class="nav-logo">
+      <div class="nav-logo-icon">🌍</div>
+      <div class="nav-logo-text">SEISMOS<sub>v2.1</sub></div>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="{{ url_for('home') }}"    class="{{ 'active' if active_page == 'home' }}">Home</a></li>
+      <li><a href="{{ url_for('predict') }}" class="{{ 'active' if active_page == 'predict' }}">Predict</a></li>
+      <li><a href="{{ url_for('history') }}" class="{{ 'active' if active_page == 'history' }}">History</a></li>
+      <li><a href="{{ url_for('about') }}"   class="{{ 'active' if active_page == 'about' }}">About</a></li>
+      <li><a href="{{ url_for('predict') }}" class="nav-cta">⚡ Predict Now</a></li>
+    </ul>
+
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+    <div class="nav-hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- ═══ PAGE CONTENT ═══ -->
+  <div class="page-wrap">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="footer-left"><strong>SEISMOS</strong> — Structural Risk Assessment Platform</div>
+    <div class="footer-right">
+      <div class="status-dot"></div>
+      MODEL ACTIVE
+    </div>
+  </footer>
+
+  <script>
+    // ── Theme toggle ──
+    const toggle = document.getElementById('themeToggle');
+    const html   = document.documentElement;
+
+    function applyTheme(theme) {
+      html.setAttribute('data-theme', theme);
+      toggle.textContent = theme === 'dark' ? '🌙' : '☀️';
+      localStorage.setItem('theme', theme);
+    }
+
+    // Load saved or default
+    applyTheme(localStorage.getItem('theme') || 'dark');
+
+    toggle.addEventListener('click', () => {
+      applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+
+    // ── Mobile menu ──
+    const hamburger = document.getElementById('hamburger');
+    const navLinks  = document.querySelector('.nav-links');
+
+    hamburger.addEventListener('click', () => {
+      navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+      navLinks.style.flexDirection = 'column';
+      navLinks.style.position = 'absolute';
+      navLinks.style.top = '68px';
+      navLinks.style.left = '0'; navLinks.style.right = '0';
+      navLinks.style.background = 'var(--surface)';
+      navLinks.style.padding = '16px 24px';
+      navLinks.style.borderBottom = '1px solid var(--border)';
+      navLinks.style.zIndex = '999';
+    });
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

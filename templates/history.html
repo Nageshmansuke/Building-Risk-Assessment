@@ -1,0 +1,116 @@
+{% extends "base.html" %} {% set active_page = "history" %} {% block title
+%}History{% endblock %} {% block content %}
+
+<div class="history-page">
+  <div class="history-header">
+    <div>
+      <div class="page-eyebrow page-in">Prediction Log</div>
+      <h1 class="page-in-2">PAST<br /><span>ANALYSES</span></h1>
+    </div>
+    <div style="text-align: right">
+      {% if history %}
+      <div class="history-meta page-in-2">
+        {{ history|length }} record{{ 's' if history|length != 1 }}
+      </div>
+      <br />
+      <a href="{{ url_for('clear_history') }}" class="btn-clear"
+        >[X] Clear History</a
+      >
+      {% endif %}
+    </div>
+  </div>
+
+  {% if history %}
+
+  <div class="history-filters page-in-3" id="filterBar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="low">Low</button>
+    <button class="filter-btn" data-filter="medium">Medium</button>
+    <button class="filter-btn" data-filter="high">High</button>
+    <button class="filter-btn" data-filter="critical">Critical</button>
+  </div>
+
+  <div class="history-table-wrap page-in-4">
+    <table class="history-table" id="historyTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Timestamp</th>
+          <th>Model</th>
+          <th>Superstructure</th>
+          <th>Foundation</th>
+          <th>Building Age</th>
+          <th>Risk Level</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in history %}
+        <tr data-result="{{ entry.result|lower }}">
+          <td class="mono">{{ loop.index }}</td>
+          <td class="mono">{{ entry.timestamp }}</td>
+          <td class="mono">{{ entry.model }}</td>
+          <td>{{ entry.superstructure }}</td>
+          <td>{{ entry.foundation_type }}</td>
+          <td class="mono">{{ entry.age_building }} yrs</td>
+          <td>
+            {% set result_lower = entry.result|lower %} {% if 'low' in
+            result_lower %}
+            <span class="damage-badge badge-low">{{ entry.result }}</span>
+            {% elif 'medium' in result_lower or 'moderate' in result_lower %}
+            <span class="damage-badge badge-medium">{{ entry.result }}</span>
+            {% elif 'high' in result_lower %}
+            <span class="damage-badge badge-high">{{ entry.result }}</span>
+            {% elif 'critical' in result_lower or 'severe' in result_lower %}
+            <span class="damage-badge badge-severe">{{ entry.result }}</span>
+            {% else %}
+            <span class="damage-badge badge-medium">{{ entry.result }}</span>
+            {% endif %}
+          </td>
+          <td class="mono">{{ "%.2f"|format(entry.confidence * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+
+  <div class="history-table-wrap page-in-3">
+    <div class="empty-state">
+      <p style="font-size: 32px; margin-bottom: 12px">[empty]</p>
+      <p>
+        No predictions yet.
+        <a href="{{ url_for('predict') }}" style="color: var(--ore)"
+          >Run your first analysis →</a
+        >
+      </p>
+    </div>
+  </div>
+
+  {% endif %}
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+  // Filter functionality
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  const rows = document.querySelectorAll("#historyTable tbody tr");
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const f = btn.dataset.filter;
+      rows.forEach((row) => {
+        if (f === "all") {
+          row.style.display = "";
+        } else {
+          const result = row.dataset.result || "";
+          row.style.display = result.includes(f) ? "" : "none";
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}
