@@ -1,0 +1,158 @@
+name: CI Pipeline (Lint, Test & Docker Verification)
+
+"on":
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # JOB 1: Code Quality & Syntax Verification
+  # ─────────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Linting Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Verify Python Compilation (Zero Syntax Errors)
+        run: |
+          python -m py_compile app.py wsgi.py models.py buiild_database.py init_db.py train_models.py tests/test_app.py
+
+      - name: Check Critical Lint Errors (E9, F63, F7, F82)
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.venv,venv,__pycache__
+
+      - name: Flake8 Code Style Report
+        run: |
+          # Warnings and style feedback (non-blocking)
+          flake8 . --count --exit-zero --max-complexity=15 --max-line-length=125 --statistics --exclude=.venv,venv,__pycache__
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 2: Security & Secret Scan
+  # ─────────────────────────────────────────────────────────────
+  security:
+    name: Security & Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Security Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Check Against Committed Sensitive Files
+        run: |
+          # Ensure .env was never accidentally committed
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "ERROR: .env file is tracked in git! Remove it immediately using 'git rm --cached .env'"
+            exit 1
+          else
+            echo "SUCCESS: No .env secret file found in git index."
+          fi
+
+      - name: Run Bandit AST Security Scan
+        run: |
+          # Scans for security vulnerabilities (excluding tests and sample training scripts)
+          bandit -r app.py wsgi.py models.py -ll -ii
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 3: Automated Test Suite (Unit & Integration)
+  # ─────────────────────────────────────────────────────────────
+  test:
+    name: Run Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Application Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Test Suite with Python Unittest
+        env:
+          SECRET_KEY: ci-test-secret-key-489234823
+          MYSQL_PASSWORD: ""
+        run: |
+          python -m unittest discover -s tests -v
+
+  # ─────────────────────────────────────────────────────────────
+  # JOB 4: Docker Container Build & Healthcheck Verification
+  # ─────────────────────────────────────────────────────────────
+  docker-smoke-test:
+    name: Docker Build & Health Verification
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: seismos-web:ci-test
+
+      - name: Run Container & Test Health Check
+        run: |
+          echo "Starting container in background..."
+          docker run -d --name seismos_test_container -p 5000:5000 \
+            -e SECRET_KEY="ci-docker-secret" \
+            -e MYSQL_PASSWORD="" \
+            seismos-web:ci-test
+
+          echo "Waiting for Gunicorn server to warm up..."
+          for i in {1..20}; do
+            if curl -s -f http://localhost:5000/health | grep -q "healthy"; then
+              echo "Container health check passed!"
+              docker logs seismos_test_container
+              docker stop seismos_test_container
+              docker rm seismos_test_container
+              exit 0
+            fi
+            echo "Attempt $i: Container warming up, waiting 3s..."
+            sleep 3
+          done
+
+          echo "ERROR: Container failed to respond to /health within 60s"
+          docker logs seismos_test_container
+          docker stop seismos_test_container
+          docker rm seismos_test_container
+          exit 1

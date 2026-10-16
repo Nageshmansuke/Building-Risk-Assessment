@@ -2,9 +2,10 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![CI Pipeline](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![CD Pipeline](https://img.shields.io/badge/CD-GHCR_&_Render-2496ED?style=flat&logo=docker&logoColor=white)](.github/workflows/cd.yml)
 [![Scikit-Learn](https://img.shields.io/badge/scikit--learn-1.3-F7931E?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![LangChain](https://img.shields.io/badge/LangChain-RAG-1C3C3C?style=flat&logo=chainlink&logoColor=white)](https://www.langchain.com/)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_Store-FF6F61?style=flat)](https://www.trychroma.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
 An intelligent web application that evaluates the seismic vulnerability of residential buildings and structures. The platform combines a **Dual-Engine Machine Learning core** for damage grade classification with an **AI Structural Engineering Consultant** powered by **Retrieval-Augmented Generation (RAG)** referencing verified Bureau of Indian Standards (IS 4326 and IS 13828) codes.
@@ -215,6 +216,52 @@ The application will be accessible at `http://localhost:5000`.
 
 ---
 
+## CI/CD Automation Pipeline (GitHub Actions)
+
+This repository includes a production-grade CI/CD pipeline configured in `.github/workflows/` that automatically runs on every push and pull request to `main` (or `master`).
+
+```text
+       ┌────────────────────────────────────────────────────────┐
+       │                Developer pushes to GitHub               │
+       └──────────────────────────┬─────────────────────────────┘
+                                  │
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │               CI Pipeline (.github/workflows/ci.yml)                   │
+ ├─────────────────┬─────────────────┬───────────────────┬────────────────┤
+ │ 1. Lint & Check │ 2. Security AST │ 3. Automated Tests│ 4. Docker Test │
+ │ Flake8 & Syntax │ Bandit scanner  │ 13 Unit/Integ tests│ Build & Health │
+ └─────────────────┴─────────────────┴───────────────────┴────────────────┘
+                                  │
+                                  ▼ (On successful merge/push to main)
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │               CD Pipeline (.github/workflows/cd.yml)                   │
+ ├────────────────────────────────────────┬────────────────────────────────┤
+ │ 1. GitHub Container Registry (GHCR)    │ 2. Automated Cloud Deployment  │
+ │ Packages & pushes Docker image tags    │ Triggers Render deploy webhook │
+ │ `latest` and short commit SHA          │ with zero downtime             │
+ └────────────────────────────────────────┴────────────────────────────────┘
+```
+
+### 1. Continuous Integration (`.github/workflows/ci.yml`)
+- **Lint & Code Quality**: Validates Python compilation with `py_compile` and runs `flake8` to catch syntax errors, unresolved imports, and code flaws.
+- **Security & Secret Scanning**: Audits against committed `.env` secret files and runs `bandit` AST vulnerability detection.
+- **Automated Test Suite**: Executes 13 comprehensive unit and integration tests using Python's test runner, testing all routes (`/`, `/health`, `/about`, `/history`), ML engines, database persistence, and fallback report generation.
+- **Docker Verification**: Builds the container image and queries the `/health` endpoint to ensure the application starts cleanly in production.
+
+### 2. Continuous Delivery (`.github/workflows/cd.yml`)
+- **Container Publishing**: Automatically authenticates via GitHub's internal token (`GITHUB_TOKEN`) and publishes the Docker image to **GitHub Packages (GHCR)**:
+  `ghcr.io/<your-github-username>/building-risk-assessment:latest`
+- **Zero-Downtime Deployment**: If you set the `RENDER_DEPLOY_HOOK_URL` secret, GitHub Actions automatically pings Render's deploy hook to instantly update your live cloud service!
+
+### Setting Up Secrets in GitHub (Optional for Cloud Deploy)
+1. Go to your repository on GitHub: **Settings** → **Secrets and variables** → **Actions**.
+2. Click **New repository secret**:
+   - `RENDER_DEPLOY_HOOK_URL`: Your Render Web Service Deploy Hook URL (found in Render dashboard under *Service Settings* → *Deploy Hook*).
+3. If this secret is omitted, the CI/CD pipeline will still test, lint, and build/publish the Docker container without errors.
+
+---
+
 ## Environment Variables Reference
 
 | Variable | Description | Required | Default |
@@ -231,7 +278,19 @@ The application will be accessible at `http://localhost:5000`.
 
 ## API Endpoints
 
-### 1. `POST /predict`
+### 1. `GET /health`
+Production health check endpoint for container orchestrators, load balancers, and CI smoke tests.
+
+**Response (JSON):**
+```json
+{
+  "status": "healthy",
+  "service": "seismos",
+  "timestamp": "2026-10-16T11:40:00.000000"
+}
+```
+
+### 2. `POST /predict`
 Submits building parameters to the ML engine and saves result to history.
 
 **Request Body (JSON):**

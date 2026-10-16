@@ -351,6 +351,14 @@ def make_prediction(model_choice, age_building, plinth_area_sq_ft,
 # FLASK ROUTES
 # ═══════════════════════════════════════════════════════════════
 
+@app.route('/health')
+def health():
+    return jsonify({
+        'status': 'healthy',
+        'service': 'seismos',
+        'timestamp': datetime.now().isoformat()
+    }), 200
+
 @app.route('/')
 def home():
     return render_template('home.html')

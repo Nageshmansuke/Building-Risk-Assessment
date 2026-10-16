@@ -1,0 +1,33 @@
+# Git & IDEs
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment Variables & Secrets
+.env
+.env.*
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.cache/
+
+# Local databases & logs
+*.db
+*.sqlite
+seismos.db
+*.log
+
+# Documentation & temporary files
+.DS_Store
+Thumbs.db
