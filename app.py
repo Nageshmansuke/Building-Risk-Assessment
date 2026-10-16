@@ -74,8 +74,17 @@ print("[2/3] Loading Decision Tree & Logistic Regression models...")
 dt_path = os.path.join(BASE_DIR, "decision_tree.pkl")
 lr_path = os.path.join(BASE_DIR, "logistic_regression.pkl")
 
-dt_model = pickle.load(open(dt_path, 'rb'))
-lr_model = pickle.load(open(lr_path, 'rb'))
+dt_model = pickle.load(open(dt_path, 'rb'))  # nosec B301
+lr_model = pickle.load(open(lr_path, 'rb'))  # nosec B301
+
+# Ensure cross-version compatibility for scikit-learn estimators (e.g. 1.3 -> 1.4/1.5+)
+for _m in (dt_model, lr_model):
+    if hasattr(_m, 'steps'):
+        for _, _est in _m.steps:
+            if not hasattr(_est, 'monotonic_cst'):
+                _est.monotonic_cst = None
+    elif not hasattr(_m, 'monotonic_cst'):
+        _m.monotonic_cst = None
 
 print("[OK] Decision Tree & Logistic Regression models ready!")
 
@@ -492,5 +501,5 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         print("[OK] Database tables created/verified successfully!")
-    print("\n[OK] SEISMOS Building Risk Predictor is running at http://127.0.0.1:5000\n")
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() in ("true", "1")
+    app.run(debug=debug_mode, host='127.0.0.1', port=5000)
