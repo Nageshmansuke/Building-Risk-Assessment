@@ -1,7 +1,7 @@
 @echo off
-title SEISMOS - Building Risk Predictor
+title QuakeGuard AI - Building Risk Predictor
 echo ========================================================
-echo   Starting SEISMOS - Building Seismic Risk Predictor
+echo   Starting QuakeGuard AI - Building Seismic Risk Predictor
 echo ========================================================
 echo.
 

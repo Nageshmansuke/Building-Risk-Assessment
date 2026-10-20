@@ -1,8 +1,8 @@
-# SEISMOS - MySQL Database Integration Guide
+# QuakeGuard AI - MySQL Database Integration Guide
 
 ## Overview
 
-The SEISMOS application has been updated to use MySQL database for persistent storage of earthquake damage predictions. This replaces the previous session-based storage system.
+The QuakeGuard AI application has been updated to use MySQL database for persistent storage of earthquake damage predictions. This replaces the previous session-based storage system.
 
 ## Setup Instructions
 
@@ -16,18 +16,12 @@ pip install -r requirements.txt
 
 ### 2. MySQL Configuration
 
-Update the MySQL credentials in `app.py` if needed (currently set to):
+Update the MySQL credentials in `.env` if needed (default set to):
 
 - Host: `localhost`
-- User: `your-name`
-- Password: `your-pass`
-- Database: `seismos` (auto-created)
-
-Edit the connection string in `app.py` line 18:
-
-```python
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:'your-db-password'@localhost:3306/seismos'
-```
+- User: `root`
+- Password: `your-password`
+- Database: `quakeguard` (auto-created)
 
 ### 3. Initialize Database
 
@@ -40,7 +34,7 @@ python init_db.py
 This will:
 
 - Connect to MySQL
-- Create the `seismos` database (if not exists)
+- Create the `quakeguard` database (if not exists)
 - Set up the connection
 
 ### 4. Create Database Tables

@@ -1,4 +1,4 @@
-# SEISMOS - AI & ML Building Seismic Risk Assessment Platform
+# QuakeGuard AI - AI & ML Building Seismic Risk Assessment Platform
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
@@ -16,7 +16,7 @@ An intelligent web application that evaluates the seismic vulnerability of resid
 
 - **Dual-Engine ML Prediction**: Predicts building damage severity (Grades 1 to 5: Low, Medium, High, Critical) using both **Decision Tree** (hierarchical split interpretability) and **Logistic Regression** (calibrated risk probability).
 - **AI Structural Consultant (RAG)**: Generates localized, professional retrofitting and structural strengthening reports authored by *Aditya Khandre (Lead AI Structural Consultant)* citing Indian Standard codes (`IS 4326` & `IS 13828`).
-- **Flexible Database Architecture**: Production-ready support for **MySQL 8.0** with an automatic, zero-config fallback to **SQLite (`seismos.db`)** so the app runs without database connection issues.
+- **Flexible Database Architecture**: Production-ready support for **MySQL 8.0** with an automatic, zero-config fallback to **SQLite (`quakeguard.db`)** so the app runs without database connection issues.
 - **Dynamic Risk Visualization**: Interactive frontend charts displaying factor contribution percentages (foundation, superstructure, building age, floor system, and plinth area).
 - **Historical Assessment Audit**: Filterable and exportable history table tracking previous assessments.
 - **Production-Ready**: Equipped with `Dockerfile`, `docker-compose.yml`, `Procfile`, and `wsgi.py` for cloud deployment on Render, Railway, AWS, or Docker containers.
@@ -121,16 +121,17 @@ Open your browser at **`http://127.0.0.1:5000`**.
 
 1. **Push your code to GitHub** (follow the Git instructions below).
 2. Go to [Render.com](https://render.com/) and create a free account.
-3. Click **New +** → **Web Service**.
+3. Click **New +** → **Blueprint** (or **Web Service**).
 4. Connect your GitHub repository.
-5. Configure the service settings:
-   - **Name**: `seismos-risk-predictor`
+5. If creating manually, configure the service settings:
+   - **Name**: `quakeguard-ai`
    - **Region**: Choose the closest region (e.g., Singapore, Frankfurt, Oregon)
    - **Runtime**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+   - **Start Command**: `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120`
 6. Under **Environment Variables**, add:
    - `SECRET_KEY`: `<generate-a-random-32-char-string>`
+   - `PYTHON_VERSION`: `3.11.8`
    - `GOOGLE_API_KEY`: `<your-google-gemini-key>` *(optional)*
 7. Click **Deploy Web Service**. Your app will be live on a free `https://<app-name>.onrender.com` URL!
 
@@ -159,8 +160,8 @@ The application will be accessible at `http://localhost:5000`.
 1. **Clone and setup repository on your server:**
    ```bash
    sudo apt update && sudo apt install -y python3-pip python3-venv nginx git
-   git clone https://github.com/your-username/Building-Risk-Assessment.git /var/www/seismos
-   cd /var/www/seismos
+   git clone https://github.com/your-username/Building-Risk-Assessment.git /var/www/quakeguard
+   cd /var/www/quakeguard
    python3 -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
@@ -169,20 +170,20 @@ The application will be accessible at `http://localhost:5000`.
 
 2. **Create a Systemd Service:**
    ```bash
-   sudo nano /etc/systemd/system/seismos.service
+   sudo nano /etc/systemd/system/quakeguard.service
    ```
    Add:
    ```ini
    [Unit]
-   Description=SEISMOS Gunicorn Application
+   Description=QuakeGuard AI Gunicorn Application
    After=network.target
 
    [Service]
    User=www-data
    Group=www-data
-   WorkingDirectory=/var/www/seismos
-   Environment="PATH=/var/www/seismos/.venv/bin"
-   ExecStart=/var/www/seismos/.venv/bin/gunicorn wsgi:app --workers 3 --bind 127.0.0.1:5000 --timeout 120
+   WorkingDirectory=/var/www/quakeguard
+   Environment="PATH=/var/www/quakeguard/.venv/bin"
+   ExecStart=/var/www/quakeguard/.venv/bin/gunicorn wsgi:app --workers 1 --threads 4 --bind 127.0.0.1:5000 --timeout 120
 
    [Install]
    WantedBy=multi-user.target
@@ -190,8 +191,8 @@ The application will be accessible at `http://localhost:5000`.
    Enable and start:
    ```bash
    sudo systemctl daemon-reload
-   sudo systemctl start seismos
-   sudo systemctl enable seismos
+   sudo systemctl start quakeguard
+   sudo systemctl enable quakeguard
    ```
 
 3. **Configure Nginx Reverse Proxy:**
@@ -266,13 +267,13 @@ This repository includes a production-grade CI/CD pipeline configured in `.githu
 
 | Variable | Description | Required | Default |
 |---|---|---|---|
-| `SECRET_KEY` | Flask session encryption key | Recommended | `seismos_default_secret_key_2026` |
+| `SECRET_KEY` | Flask session encryption key | Recommended | `quakeguard_default_secret_key_2026` |
 | `GOOGLE_API_KEY` | Google Gemini API key for live AI Consultant | Optional | *(Uses offline RAG template if omitted)* |
 | `MYSQL_HOST` | MySQL hostname or IP | Optional | `localhost` |
 | `MYSQL_PORT` | MySQL connection port | Optional | `3306` |
 | `MYSQL_USER` | MySQL database user | Optional | `root` |
 | `MYSQL_PASSWORD` | MySQL password | Optional | `""` *(Uses SQLite fallback if blank)* |
-| `MYSQL_DATABASE` | MySQL database name | Optional | `seismos` |
+| `MYSQL_DATABASE` | MySQL database name | Optional | `quakeguard` |
 
 ---
 
@@ -285,7 +286,7 @@ Production health check endpoint for container orchestrators, load balancers, an
 ```json
 {
   "status": "healthy",
-  "service": "seismos",
+  "service": "quakeguard",
   "timestamp": "2026-10-16T11:40:00.000000"
 }
 ```

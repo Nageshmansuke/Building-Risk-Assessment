@@ -1,5 +1,5 @@
 """
-WSGI entrypoint for SEISMOS production deployment (Gunicorn / Waitress / uWSGI).
+WSGI entrypoint for QuakeGuard AI production deployment (Gunicorn / Waitress / uWSGI).
 """
 
 from app import app, db

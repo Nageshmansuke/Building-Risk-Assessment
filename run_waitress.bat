@@ -1,7 +1,7 @@
 @echo off
-title SEISMOS Production Server (Waitress WSGI)
+title QuakeGuard AI Production Server (Waitress WSGI)
 echo ========================================================
-echo   Starting SEISMOS Production Server (Waitress WSGI)
+echo   Starting QuakeGuard AI Production Server (Waitress WSGI)
 echo   Listening on http://127.0.0.1:5000
 echo ========================================================
 echo.

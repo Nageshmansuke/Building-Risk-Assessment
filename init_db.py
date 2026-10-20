@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Initialize database for SEISMOS application.
+Initialize database for QuakeGuard AI application.
 Supports MySQL when available, and initializes SQLite database automatically.
 """
 
@@ -19,7 +19,7 @@ def init_database():
     mysql_pass = os.getenv("MYSQL_PASSWORD", "")
     mysql_host = os.getenv("MYSQL_HOST", "localhost")
     mysql_port = os.getenv("MYSQL_PORT", "3306")
-    mysql_db = os.getenv("MYSQL_DATABASE", "seismos")
+    mysql_db = os.getenv("MYSQL_DATABASE", "quakeguard")
 
     if mysql_pass:
         try:
@@ -44,10 +44,10 @@ def init_database():
     from app import app, db
     with app.app_context():
         db.create_all()
-    print("[OK] SQLite database tables initialized successfully in seismos.db!")
+    print("[OK] SQLite database tables initialized successfully!")
     return True
 
 if __name__ == '__main__':
-    print("[INFO] Initializing SEISMOS Database...")
+    print("[INFO] Initializing QuakeGuard AI Database...")
     init_database()
     print("[OK] Database setup complete. You can run: python app.py")

@@ -10,7 +10,7 @@ os.environ["SECRET_KEY"] = "test-secret-key-for-testing"
 from app import app, db, Prediction, make_prediction, generate_fallback_report
 
 
-class SeismosTestCase(unittest.TestCase):
+class QuakeGuardTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         app.config['TESTING'] = True
@@ -38,12 +38,12 @@ class SeismosTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertEqual(data.get('status'), 'healthy')
-        self.assertEqual(data.get('service'), 'seismos')
+        self.assertEqual(data.get('service'), 'quakeguard')
 
     def test_home_page(self):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'SEISMOS', response.data)
+        self.assertIn(b'QuakeGuard', response.data)
 
     def test_about_page(self):
         response = self.client.get('/about')

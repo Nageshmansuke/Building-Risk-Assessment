@@ -3,7 +3,7 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 print("\n" + "="*60)
-print("  SEISMOS - Earthquake Building Risk Assessment System")
+print("  QuakeGuard AI - Earthquake Building Risk Assessment System")
 print("="*60)
 print("[1/3] Loading packages and models... (please wait a few seconds)")
 
@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 app = Flask(__name__)
-sec_key = os.getenv("SECRET_KEY", "seismos_default_secret_key_2026")
+sec_key = os.getenv("SECRET_KEY", "quakeguard_default_secret_key_2026")
 app.secret_key = sec_key
 
 # ═══════════════════════════════════════════════════════════════
@@ -31,7 +31,7 @@ mysql_user = os.getenv("MYSQL_USER", "root")
 mysql_pass = os.getenv("MYSQL_PASSWORD", "")
 mysql_host = os.getenv("MYSQL_HOST", "localhost")
 mysql_port = os.getenv("MYSQL_PORT", "3306")
-mysql_db = os.getenv("MYSQL_DATABASE", "seismos")
+mysql_db = os.getenv("MYSQL_DATABASE", "quakeguard")
 
 db_uri = None
 if mysql_pass:
@@ -53,7 +53,10 @@ if mysql_pass:
         print(f"[INFO] MySQL not available ({e}). Using local SQLite database.")
 
 if not db_uri:
-    sqlite_db_path = os.path.join(BASE_DIR, "seismos.db")
+    sqlite_db_path = os.path.join(BASE_DIR, "quakeguard.db")
+    # Backwards compatibility if previous seismos.db exists
+    if not os.path.exists(sqlite_db_path) and os.path.exists(os.path.join(BASE_DIR, "seismos.db")):
+        sqlite_db_path = os.path.join(BASE_DIR, "seismos.db")
     db_uri = f"sqlite:///{sqlite_db_path}"
     print(f"[INFO] Database initialized with SQLite at: {sqlite_db_path}")
 
@@ -364,7 +367,7 @@ def make_prediction(model_choice, age_building, plinth_area_sq_ft,
 def health():
     return jsonify({
         'status': 'healthy',
-        'service': 'seismos',
+        'service': 'quakeguard',
         'timestamp': datetime.now().isoformat()
     }), 200
 

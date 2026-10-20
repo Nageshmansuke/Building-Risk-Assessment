@@ -1,3 +1,3 @@
 """
-SEISMOS Test Suite
+QuakeGuard AI Test Suite
 """
